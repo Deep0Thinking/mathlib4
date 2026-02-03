@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.MeanValue
 
 /-!
 # Evaluation of specific improper integrals
@@ -283,3 +284,198 @@ theorem integral_univ_inv_one_add_sq : ∫ (x : ℝ), (1 + x ^ 2)⁻¹ = π :=
   (by ring : π = (π / 2) - (-(π / 2))) ▸ integral_of_hasDerivAt_of_tendsto hasDerivAt_arctan'
     integrable_inv_one_add_sq (tendsto_nhds_of_tendsto_nhdsWithin tendsto_arctan_atBot)
     (tendsto_nhds_of_tendsto_nhdsWithin tendsto_arctan_atTop)
+
+namespace Frullani
+
+lemma comp_mul_left_div
+    {f : ℝ → ℝ} (hf : ContinuousOn f (Ici 0)) {p q : ℝ} (p_pos : 0 < p) (q_pos : 0 < q) {c : ℝ}
+    (c_pos : 0 < c) : ContinuousOn (fun x ↦ f (c * x) / x) (uIcc p q) := by
+  have hsub : uIcc p q ⊆ Ici 0 := by simp [uIcc, Icc_subset_Ici_iff, p_pos.le, q_pos.le]
+  apply hf.comp_mul_left_div continuousOn_id
+  all_goals intro x hx
+  · simpa [mem_Ici] using mul_nonneg (le_of_lt c_pos) (hsub hx)
+  · exact ((lt_min p_pos q_pos).trans_le hx.1).ne'
+
+lemma intervalIntegrable_div
+    {f : ℝ → ℝ} (hf : ContinuousOn f (Ici 0)) {p q : ℝ} (hp : 0 < p) (hq : 0 < q) :
+    IntervalIntegrable (fun x ↦ f x / x) volume p q := by
+  have hcont : ContinuousOn (fun x ↦ f (1 * x) / x) (uIcc p q) :=
+    Frullani.comp_mul_left_div hf hp hq (by simp)
+  simpa using hcont.intervalIntegrable
+
+lemma exists_integral_div_eq_mul_log {a b : ℝ} {f : ℝ → ℝ} {y : ℝ} (a_pos : 0 < a) (b_pos : 0 < b)
+    (y_pos : 0 < y) (hf : ContinuousOn f (Ici 0)) :
+    ∃ c ∈ uIcc (a * y) (b * y), ∫ x in (a * y)..(b * y), f x / x = f c * log (b / a) := by
+  have hay := mul_pos a_pos y_pos
+  have hby := mul_pos b_pos y_pos
+  have hf' : ContinuousOn f (uIcc (a * y) (b * y)) :=
+    hf.mono (by simp [uIcc, Icc_subset_Ici_iff, hay.le, hby.le])
+  obtain ⟨c, hc, heq⟩ := _root_.exists_integral_div_eq_mul_log hay hby hf'
+  rw [mul_div_mul_right b a (ne_of_gt y_pos)] at heq
+  exact ⟨c, hc, heq⟩
+
+/-- **Frullani integral**. 
+If `f : ℝ → ℝ` is continuous on `[0, ∞)` with `Tendsto f atTop (𝓝 L)`, and `0 < a`, `0 < b`, then 
+`∫ x in Ioi 0, (f (a * x) - f (b * x)) / x = (f 0 - L) * log (b / a)`. -/
+theorem integral_Ioi
+    {a b : ℝ} {f : ℝ → ℝ} {L : ℝ} (a_pos : 0 < a) (b_pos : 0 < b) (hf : ContinuousOn f (Ici 0))
+    (hlim : Tendsto f atTop (𝓝 L))
+    (hint : IntegrableOn (fun x ↦ (f (a * x) - f (b * x)) / x) (Ioi 0)) :
+    ∫ x in Ioi 0, (f (a * x) - f (b * x)) / x = (f 0 - L) * log (b / a) := by
+  let g : ℝ → ℝ := fun x ↦ (f (a * x) - f (b * x)) / x
+  have hg (ε R : ℝ) (hε : 0 < ε) (hR : ε < R) : ∫ x in ε..R, g x =
+      (∫ x in a * ε..b * ε, f x / x) - (∫ x in a * R..b * R, f x / x) := by
+    let u x := f x / x
+    wlog hab : a ≤ b generalizing a b
+    · have hint_neg :
+        IntegrableOn (fun x ↦ - ((f (a * x) - f (b * x)) / x)) (Ioi 0) volume := hint.neg
+      have hint_neg' : IntegrableOn (fun x ↦ (f (b * x) - f (a * x)) / x) (Ioi 0) volume := by
+        convert hint_neg using 1
+        ext
+        ring
+      simp only [not_le] at hab
+      specialize this b_pos a_pos hint_neg' hab.le
+      have hg_neg : (fun x ↦ (f (b * x) - f (a * x)) / x) = fun x ↦ - g x := by
+        funext x
+        unfold g
+        ring
+      simp only [hg_neg, intervalIntegral.integral_neg] at this
+      rw [integral_symm (b * ε) (a * ε), integral_symm (b * R) (a * R), ← neg_inj, this]
+      ring
+    calc
+      _ = (∫ x in ε..R, f (a * x) / x) - ∫ x in ε..R, f (b * x) / x := by
+        simp_rw [g, sub_div]
+        have hR_pos : 0 < R := by nlinarith
+        apply intervalIntegral.integral_sub
+        all_goals apply ContinuousOn.intervalIntegrable
+        · exact Frullani.comp_mul_left_div hf hε hR_pos a_pos
+        · exact Frullani.comp_mul_left_div hf hε hR_pos b_pos
+      _ = (∫ y in a * ε..a * R, u y) - ∫ y in b * ε..b * R, u y := by
+        have hfa_eq : ∫ x in ε..R, f (a * x) / x = ∫ y in a * ε..a * R, u y := by
+          calc
+            _ = ∫ x in ε..R, a * u (a * x) := by
+              unfold u
+              field_simp
+            _ = a * ∫ x in ε..R, u (a * x) := by apply intervalIntegral.integral_const_mul
+            _ = ∫ y in a * ε..a * R, u y := by apply mul_integral_comp_mul_left
+        have hfb_eq : ∫ x in ε..R, f (b * x) / x = ∫ y in b * ε..b * R, u y := by
+          calc
+            _ = ∫ x in ε..R, b * u (b * x) := by
+              congr
+              funext x
+              unfold u
+              field_simp
+            _ = b * ∫ x in ε..R, u (b * x) := by
+              apply intervalIntegral.integral_const_mul
+            _ = ∫ y in b * ε..b * R, u y := by
+              apply mul_integral_comp_mul_left
+        rw [hfa_eq, hfb_eq]
+      _ = (∫ x in a * ε..b * ε, u x) - (∫ x in a * R..b * R, u x) := by
+        apply integral_interval_sub_interval_comm
+        all_goals
+          apply intervalIntegrable_div hf
+          all_goals nlinarith
+  change ∫ x in Ioi 0, g x = (f 0 - L) * log (b / a)
+  have hc (y : ℝ) (y_pos : 0 < y) : ∃ c ∈ uIcc (a * y) (b * y),
+      (∫ x in (a * y)..(b * y), f x / x) = f c * log (b / a) :=
+    exists_integral_div_eq_mul_log a_pos b_pos y_pos hf
+  let F : ℝ → ℝ := fun R ↦ ∫ x in 0..R, g x
+  have h_lhs : Tendsto F atTop (𝓝 (∫ x in Ioi 0, g x)) :=
+    intervalIntegral_tendsto_integral_Ioi 0 hint tendsto_id
+  have h_rhs : Tendsto F atTop (𝓝 ((f 0 - L) * log (b / a))) := by
+    unfold F
+    choose! fc hy_mem hy_eq using hc
+    have hg' (ε R : ℝ) (hε : 0 < ε) (hεR : ε < R) :
+        ∫ x in ε..R, g x = (f (fc ε) - f (fc R)) * log (b / a) := by
+      have hR_pos : 0 < R := by linarith
+      rw [hg ε R hε hεR, hy_eq ε hε, hy_eq R hR_pos]
+      field_simp
+    have h_lim_L : Tendsto (fun R ↦ f (fc R)) atTop (𝓝 L) := by
+      apply hlim.comp
+      let m := min a b
+      have hm_pos : 0 < m := by grind
+      have h_ev_le : (fun y ↦ m * y) ≤ᶠ[atTop] fc := by
+        rw [EventuallyLE, eventually_atTop]
+        use 1
+        intro y hy1
+        have hy_pos : 0 < y := by linarith
+        have hy := hy_mem y hy_pos
+        simp only [ge_iff_le]
+        rw [mem_uIcc] at hy
+        rcases hy with h | h
+        · have : m ≤ a := by grind
+          nlinarith
+        · have : m ≤ b := by grind
+          nlinarith
+      have h_lim_atTop : Tendsto (fun y ↦ m * y) atTop atTop := by
+        simpa [tendsto_const_mul_atTop_of_pos hm_pos] using tendsto_id
+      exact tendsto_atTop_mono' atTop h_ev_le h_lim_atTop
+    have h_tail (ε R : ℝ) (hε : 0 < ε) (hεR : ε < R) :
+        ∫ x in Ioi ε, g x = (f (fc ε) - L) * log (b / a) := by
+      have hR' : Tendsto (fun R ↦ ∫ x in ε..R, g x) atTop (𝓝 (∫ x in Ioi ε, g x)) := by
+        apply intervalIntegral_tendsto_integral_Ioi
+        · apply hint.mono_set (Ioi_subset_Ioi hε.le)
+        · exact tendsto_id
+      have hR : Tendsto (fun R ↦ ∫ x in ε..R, g x) atTop (𝓝 ((f (fc ε) - L) * log (b / a))) := by
+        have h_ev_eq : (fun R ↦ ∫ x in ε..R, g x) =ᶠ[atTop]
+            (fun R ↦ (f (fc ε) - f (fc R)) * log (b / a)) := by
+          apply (eventually_gt_atTop ε).mono
+          intro R hεR'
+          exact hg' ε R hε hεR'
+        rw [tendsto_congr' h_ev_eq]
+        have h_lim_const : Tendsto (fun _ : ℝ ↦ f (fc ε)) atTop (𝓝 (f (fc ε))) := tendsto_const_nhds
+        have h_sub : Tendsto (fun R ↦ (f (fc ε) - f (fc R))) atTop (𝓝 ((f (fc ε)) - L)) :=
+          h_lim_const.sub h_lim_L
+        have h_const_log : Tendsto (fun _ : ℝ ↦ log (b / a)) atTop (𝓝 (log (b / a))) :=
+          tendsto_const_nhds
+        exact h_sub.mul h_const_log
+      exact tendsto_nhds_unique hR' hR
+    have hε : Tendsto (fun ε ↦ ∫ x in Ioi ε, g x) (𝓝[>] 0) (𝓝 (∫ x in Ioi 0, g x)) :=
+      IntegrableOn.tendsto_integral_Ioi hint
+    have h_lim_f_zero : Tendsto (fun ε ↦ f (fc ε)) (𝓝[>] 0) (𝓝 (f 0)) := by
+      have h_lim_zero : Tendsto (fun ε ↦ (max a b) * ε) (𝓝[>] 0) (𝓝 0) := by
+        have hc : ContinuousWithinAt (fun ε : ℝ ↦ (max a b) * ε) (Ioi (0 : ℝ)) 0 :=
+          (continuous_mul_left (max a b)).continuousWithinAt
+        simpa using hc.tendsto
+      have h_ev_fc_nonneg : ∀ᶠ ε in 𝓝[>] 0, 0 ≤ fc ε := by
+        apply eventually_of_mem self_mem_nhdsWithin
+        intro ε hε
+        have hmem := hy_mem ε hε
+        have hε_pos : 0 < ε := by grind
+        have hmin_nonneg : 0 ≤ min (a * ε) (b * ε) := by apply le_min (by nlinarith) (by nlinarith)
+        apply le_trans hmin_nonneg
+        rw [mem_uIcc] at hmem
+        grind
+      have h_ev_fc_le_max : ∀ᶠ ε in 𝓝[>] 0, fc ε ≤ (max a b) * ε := by
+        apply eventually_of_mem self_mem_nhdsWithin
+        intro ε hε
+        have hmem := hy_mem ε hε
+        rw [max_mul_of_nonneg a b hε.le]
+        rw [mem_uIcc] at hmem
+        grind
+      have hcont_zero : ContinuousWithinAt f (Ici (0 : ℝ)) 0 := by
+        apply hf.continuousWithinAt (by simp)
+      have hfc_within : Tendsto fc (𝓝[>] 0) (𝓝[Ici (0 : ℝ)] 0) := by
+        apply tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
+        · exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
+            tendsto_const_nhds h_lim_zero h_ev_fc_nonneg h_ev_fc_le_max
+        · exact h_ev_fc_nonneg
+      exact hcont_zero.tendsto.comp hfc_within
+    have h_main : ∫ x in Ioi 0, g x = (f 0 - L) * log (b / a) := by
+      have h_ev_eq : (fun ε ↦ ∫ x in Ioi ε, g x) =ᶠ[𝓝[>] 0]
+          (fun ε ↦ (f (fc ε) - L) * log (b / a)) := by
+        change (∀ᶠ ε in 𝓝[>] 0, ∫ x in Ioi ε, g x = (f (fc ε) - L) * log (b / a))
+        apply eventually_of_mem self_mem_nhdsWithin
+        intro ε hε
+        simp [h_tail ε (ε + 1) hε]
+      have h_rhs_from_left : Tendsto (fun ε ↦ (f (fc ε) - L) * log (b / a))
+          (𝓝[>] 0) (𝓝 (∫ x in Ioi 0, g x)) := by rwa [← tendsto_congr' h_ev_eq]
+      have h_lim_f_zero_sub_L : Tendsto (fun ε ↦ f (fc ε) - L) (𝓝[>] 0) (𝓝 (f 0 - L)) :=
+        h_lim_f_zero.sub tendsto_const_nhds
+      have h_rhs_goal : Tendsto (fun ε ↦ (f (fc ε) - L) * log (b / a))
+          (𝓝[>] 0) (𝓝 ((f 0 - L) * log (b / a))) := h_lim_f_zero_sub_L.mul_const (log (b / a))
+      exact tendsto_nhds_unique h_rhs_from_left h_rhs_goal
+    rwa [h_main] at h_lhs
+  exact tendsto_nhds_unique h_lhs h_rhs
+
+end Frullani
