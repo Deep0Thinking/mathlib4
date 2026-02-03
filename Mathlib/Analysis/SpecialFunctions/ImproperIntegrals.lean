@@ -314,8 +314,8 @@ lemma exists_integral_div_eq_mul_log {a b : ℝ} {f : ℝ → ℝ} {y : ℝ} (a_
   rw [mul_div_mul_right b a (ne_of_gt y_pos)] at heq
   exact ⟨c, hc, heq⟩
 
-/-- **Frullani integral**. 
-If `f : ℝ → ℝ` is continuous on `[0, ∞)` with `Tendsto f atTop (𝓝 L)`, and `0 < a`, `0 < b`, then 
+/-- **Frullani integral**.
+If `f : ℝ → ℝ` is continuous on `[0, ∞)` with `Tendsto f atTop (𝓝 L)`, and `0 < a`, `0 < b`, then
 `∫ x in Ioi 0, (f (a * x) - f (b * x)) / x = (f 0 - L) * log (b / a)`. -/
 theorem integral_Ioi
     {a b : ℝ} {f : ℝ → ℝ} {L : ℝ} (a_pos : 0 < a) (b_pos : 0 < b) (hf : ContinuousOn f (Ici 0))

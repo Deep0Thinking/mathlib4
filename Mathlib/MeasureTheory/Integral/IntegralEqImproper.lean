@@ -624,7 +624,7 @@ theorem intervalIntegral_tendsto_integral_Ioi (a : ℝ) (hfi : IntegrableOn f (I
 end IntegralOfIntervalIntegral
 
 theorem IntegrableOn.tendsto_integral_Ioi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {a : ℝ} {g : ℝ → E} (hg : IntegrableOn g (Ioi a)) : 
+    {a : ℝ} {g : ℝ → E} (hg : IntegrableOn g (Ioi a)) :
     Tendsto (fun ε : ℝ ↦ ∫ x in Ioi ε, g x) (𝓝[>] a) (𝓝 (∫ x in Ioi a, g x)) := by
   have hg' : IntervalIntegrable g volume a (a + 1) := by
     rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by linarith)]

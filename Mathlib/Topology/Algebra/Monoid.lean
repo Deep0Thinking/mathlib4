@@ -72,12 +72,12 @@ theorem continuous_mul_right (a : M) : Continuous fun b : M => b * a := by fun_p
 
 @[to_additive]
 theorem ContinuousOn.comp_mul_left {f : M → X} {s t : Set M} {c : M} (hf : ContinuousOn f t)
-    (hct : Set.MapsTo (fun x : M => c * x) s t) : ContinuousOn (fun x => f (c * x)) s := 
+    (hct : Set.MapsTo (fun x : M => c * x) s t) : ContinuousOn (fun x => f (c * x)) s :=
   hf.comp (continuous_mul_left c).continuousOn hct
 
 @[to_additive]
 theorem ContinuousOn.comp_mul_right {f : M → X} {s t : Set M} {c : M} (hf : ContinuousOn f t)
-    (hct : Set.MapsTo (fun x : M => x * c) s t) : ContinuousOn (fun x => f (x * c)) s := 
+    (hct : Set.MapsTo (fun x : M => x * c) s t) : ContinuousOn (fun x => f (x * c)) s :=
   hf.comp (continuous_mul_right c).continuousOn hct
 
 @[to_additive]
