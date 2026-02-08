@@ -623,6 +623,32 @@ theorem intervalIntegral_tendsto_integral_Ioi (a : ℝ) (hfi : IntegrableOn f (I
 
 end IntegralOfIntervalIntegral
 
+theorem IntegrableOn.tendsto_integral_Ioi {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {a : ℝ} {f : ℝ → E} (hf : IntegrableOn f (Ioi a)) {b : ι → ℝ} {l : Filter ι}
+    (hb : Tendsto b l (𝓝[≥] a)) :
+    Tendsto (fun i ↦ ∫ x in Ioi (b i), f x) l (𝓝 (∫ x in Ioi a, f x)) := by
+  have hf' : IntervalIntegrable f volume a (a + 1) := by
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by linarith)]
+    exact hf.mono_set Ioc_subset_Ioi_self
+  have h_lim_zero : Tendsto (fun ε ↦ ∫ x in a..ε, f x) (𝓝[≥] a) (𝓝 0) := by
+    have hcont : ContinuousWithinAt (fun ε ↦ ∫ x in a..ε, f x) (Icc a (a + 1)) a :=
+      intervalIntegral.continuousWithinAt_primitive (by simp) (by simpa using hf')
+    simpa [ContinuousWithinAt] using hcont
+  have hε_split (ε : ℝ) (hε : a ≤ ε) :
+      ∫ x in Ioi ε, f x = (∫ x in Ioi a, f x) - ∫ x in a..ε, f x := by
+    calc
+      _ = ∫ x in Ioi a \ Ioc a ε, f x := by simp [hε]
+      _ = (∫ x in Ioi a, f x) - ∫ x in Ioc a ε, f x :=
+        integral_diff measurableSet_Ioc hf Ioc_subset_Ioi_self
+      _ = _ := by rw [intervalIntegral.integral_of_le hε]
+  have hev_eq : (fun i ↦ ∫ x in Ioi (b i), f x) =ᶠ[l]
+      (fun i ↦ (∫ x in Ioi a, f x) - ∫ x in a..b i, f x) := by
+    apply (hb.eventually self_mem_nhdsWithin).mono
+    intro i hi
+    exact hε_split (b i) hi
+  rw [tendsto_congr' hev_eq]
+  simpa using tendsto_const_nhds.sub (h_lim_zero.comp hb)
+
 open Real
 
 open scoped Interval
