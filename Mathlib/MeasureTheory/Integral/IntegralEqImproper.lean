@@ -630,6 +630,12 @@ theorem IntegrableOn.tendsto_integral_Ioi {ι E : Type*} [NormedAddCommGroup E] 
     Tendsto (fun i ↦ ∫ x in Ioi (b i), f x) l (𝓝 (∫ x in Ioi a, f x)) :=
   (hf.tendsto_primitive_Ioi le_rfl).comp hb
 
+theorem IntegrableOn.tendsto_integral_Iio {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {a : ℝ} {f : ℝ → E} (hf : IntegrableOn f (Iio a)) {b : ι → ℝ} {l : Filter ι}
+    (hb : Tendsto b l (𝓝[≤] a)) :
+    Tendsto (fun i ↦ ∫ x in Iio (b i), f x) l (𝓝 (∫ x in Iio a, f x)) :=
+  (hf.tendsto_primitive_Iio le_rfl).comp hb
+
 open Real
 
 open scoped Interval
