@@ -787,6 +787,32 @@ theorem IntegrableOn.continuousOn_primitive_Iio [NoAtoms μ] {a : ℝ}
 
 end PrimitiveIio
 
+section PrimitiveIci
+
+theorem IntegrableOn.continuousOn_primitive_Ici [NoAtoms μ] {a : ℝ}
+    (hf : IntegrableOn f (Ici a) μ) :
+    ContinuousOn (fun b ↦ ∫ x in Ici b, f x ∂μ) (Ici a) := by
+  conv =>
+    arg 1
+    ext b
+    rw [integral_Ici_eq_integral_Ioi]
+  exact (hf.mono_set Ioi_subset_Ici_self).continuousOn_primitive_Ioi
+
+end PrimitiveIci
+
+section PrimitiveIci
+
+theorem IntegrableOn.continuousOn_primitive_Iic [NoAtoms μ] {a : ℝ}
+    (hf : IntegrableOn f (Iic a) μ) :
+    ContinuousOn (fun b ↦ ∫ x in Iic b, f x ∂μ) (Iic a) := by
+  conv =>
+    arg 1
+    ext b
+    rw [integral_Iic_eq_integral_Iio]
+  exact (hf.mono_set Iio_subset_Iic_self).continuousOn_primitive_Iio
+
+end PrimitiveIci
+
 end MeasureTheory
 
 end DominatedConvergenceTheorem
