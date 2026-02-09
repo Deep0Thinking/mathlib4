@@ -679,6 +679,39 @@ theorem IntegrableOn.continuousWithinAt_primitive_Ioi {a b₀ : ℝ} (hf : Integ
     ContinuousWithinAt (fun b ↦ ∫ x in Ioi b, f x ∂μ) (Ici b₀) b₀ :=
   hf.tendsto_primitive_Ioi hb₀
 
+theorem IntegrableOn.continuousOn_primitive_Ioi [NoAtoms μ] {a : ℝ}
+    (hf : IntegrableOn f (Ioi a) μ) :
+    ContinuousOn (fun b ↦ ∫ x in Ioi b, f x ∂μ) (Ici a) := by
+  intro b₀ hb₀
+  rw [mem_Ici] at hb₀
+  simp_rw [← integral_indicator measurableSet_Ioi]
+  apply tendsto_integral_filter_of_dominated_convergence
+  · filter_upwards [self_mem_nhdsWithin] with b hb
+    rw [aestronglyMeasurable_indicator_iff measurableSet_Ioi]
+    apply Integrable.aestronglyMeasurable
+    exact hf.mono_set (Ioi_subset_Ioi hb)
+  · filter_upwards [self_mem_nhdsWithin] with b hb
+    apply ae_of_all
+    intro x
+    rw [norm_indicator_eq_indicator_norm]
+    apply indicator_le_indicator_of_subset (Ioi_subset_Ioi hb)
+    intro _
+    exact norm_nonneg _
+  · simpa [integrable_indicator_iff measurableSet_Ioi] using hf.norm
+  · have hne : ∀ᵐ x ∂μ, x ≠ b₀ := by simp [ae_iff]
+    filter_upwards [hne] with x hx
+    rw [indicator_apply]
+    by_cases hxb : b₀ < x
+    · simp only [mem_Ioi, hxb, if_true]
+      apply tendsto_const_nhds.congr'
+      filter_upwards [mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds hxb)] with b (hb : b < x)
+      simp [hb]
+    · simp only [mem_Ioi, hxb, if_false]
+      have hxb' : x < b₀ := lt_of_le_of_ne (not_lt.mp hxb) hx
+      apply tendsto_const_nhds.congr'
+      filter_upwards [mem_nhdsWithin_of_mem_nhds (Ioi_mem_nhds hxb')] with b (hb : x < b)
+      simp [hb.le]
+
 end PrimitiveIoi
 
 end MeasureTheory
