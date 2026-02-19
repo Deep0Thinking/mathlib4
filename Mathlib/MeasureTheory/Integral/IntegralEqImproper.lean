@@ -624,32 +624,6 @@ theorem intervalIntegral_tendsto_integral_Ioi (a : ℝ) (hfi : IntegrableOn f (I
 
 end IntegralOfIntervalIntegral
 
-theorem IntegrableOn.tendsto_integral_Ioi {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {a : ℝ} {f : ℝ → E} (hf : IntegrableOn f (Ioi a)) {b : ι → ℝ} {l : Filter ι}
-    (hb : Tendsto b l (𝓝[≥] a)) :
-    Tendsto (fun i ↦ ∫ x in Ioi (b i), f x) l (𝓝 (∫ x in Ioi a, f x)) :=
-  (hf.tendsto_primitive_Ioi le_rfl).comp hb
-
-theorem IntegrableOn.tendsto_integral_Iio {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {a : ℝ} {f : ℝ → E} (hf : IntegrableOn f (Iio a)) {b : ι → ℝ} {l : Filter ι}
-    (hb : Tendsto b l (𝓝[≤] a)) :
-    Tendsto (fun i ↦ ∫ x in Iio (b i), f x) l (𝓝 (∫ x in Iio a, f x)) :=
-  (hf.tendsto_primitive_Iio le_rfl).comp hb
-
-theorem IntegrableOn.tendsto_integral_Ici {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {μ : Measure ℝ} [NoAtoms μ] {a : ℝ} {f : ℝ → E} (hf : IntegrableOn f (Ici a) μ)
-    {b : ι → ℝ} {l : Filter ι} (hb : Tendsto b l (𝓝[≥] a)) :
-    Tendsto (fun i ↦ ∫ x in Ici (b i), f x ∂μ) l (𝓝 (∫ x in Ici a, f x ∂μ)) := by
-  simp_rw [integral_Ici_eq_integral_Ioi]
-  exact ((hf.mono_set Ioi_subset_Ici_self).tendsto_primitive_Ioi le_rfl).comp hb
-
-theorem IntegrableOn.tendsto_integral_Iic {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {μ : Measure ℝ} [NoAtoms μ] {a : ℝ} {f : ℝ → E} (hf : IntegrableOn f (Iic a) μ)
-    {b : ι → ℝ} {l : Filter ι} (hb : Tendsto b l (𝓝[≤] a)) :
-    Tendsto (fun i ↦ ∫ x in Iic (b i), f x ∂μ) l (𝓝 (∫ x in Iic a, f x ∂μ)) := by
-  simp_rw [integral_Iic_eq_integral_Iio]
-  exact ((hf.mono_set Iio_subset_Iic_self).tendsto_primitive_Iio le_rfl).comp hb
-
 open Real
 
 open scoped Interval
