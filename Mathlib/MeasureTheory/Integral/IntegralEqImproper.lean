@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
-public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Links between an integral and its "improper" version
