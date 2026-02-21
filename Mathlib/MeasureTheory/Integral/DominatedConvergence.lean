@@ -645,8 +645,8 @@ open intervalIntegral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E}
 
-theorem continuousWithinAt_primitive_Ioi {a b₀ : ℝ} (hf : IntegrableOn f (Ioi a) μ) (hb₀ : a ≤ b₀) :
-    ContinuousWithinAt (fun b ↦ ∫ x in Ioi b, f x ∂μ) (Ici b₀) b₀ := by
+theorem continuousWithinAt_Ici_primitive_Ioi {a b₀ : ℝ} (hf : IntegrableOn f (Ioi a) μ)
+    (hb₀ : a ≤ b₀) : ContinuousWithinAt (fun b ↦ ∫ x in Ioi b, f x ∂μ) (Ici b₀) b₀ := by
   simp_rw [← integral_indicator measurableSet_Ioi]
   refine tendsto_integral_filter_of_dominated_convergence ((Ioi a).indicator (norm ∘ f)) ?_ ?_ ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with b hb
@@ -663,7 +663,7 @@ theorem continuousWithinAt_primitive_Ioi {a b₀ : ℝ} (hf : IntegrableOn f (Io
     · filter_upwards [mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds hx)] with b hb using by grind
     · filter_upwards [self_mem_nhdsWithin] with b hb using by grind
 
-theorem continuousOn_primitive_Ioi [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (Ioi a) μ) :
+theorem continuousOn_Ici_primitive_Ioi [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (Ioi a) μ) :
     ContinuousOn (fun b ↦ ∫ x in Ioi b, f x ∂μ) (Ici a) := by
   intro b₀ hb₀
   rw [mem_Ici] at hb₀
@@ -680,10 +680,10 @@ theorem continuousOn_primitive_Ioi [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (
     have h_cwa : ContinuousWithinAt (fun b ↦ ∫ x in a..b, f x ∂μ) (Icc a b₀) b₀ :=
       continuousWithinAt_primitive (measure_singleton b₀) (by simpa [hb₀])
     exact (continuousWithinAt_const.sub h_cwa).congr h_split (h_split b₀ (right_mem_Icc.2 hb₀))
-  · simpa [hb₀] using hf.continuousWithinAt_primitive_Ioi hb₀
+  · simpa [hb₀] using hf.continuousWithinAt_Ici_primitive_Ioi hb₀
 
-theorem continuousWithinAt_primitive_Iio {a b₀ : ℝ} (hf : IntegrableOn f (Iio a) μ) (hb₀ : b₀ ≤ a) :
-    ContinuousWithinAt (fun b ↦ ∫ x in Iio b, f x ∂μ) (Iic b₀) b₀ := by
+theorem continuousWithinAt_Iic_primitive_Iio {a b₀ : ℝ} (hf : IntegrableOn f (Iio a) μ)
+    (hb₀ : b₀ ≤ a) : ContinuousWithinAt (fun b ↦ ∫ x in Iio b, f x ∂μ) (Iic b₀) b₀ := by
   simp_rw [← integral_indicator measurableSet_Iio]
   refine tendsto_integral_filter_of_dominated_convergence ((Iio a).indicator (norm ∘ f)) ?_ ?_ ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with b hb
@@ -700,13 +700,13 @@ theorem continuousWithinAt_primitive_Iio {a b₀ : ℝ} (hf : IntegrableOn f (Ii
     · filter_upwards [mem_nhdsWithin_of_mem_nhds (Ioi_mem_nhds hx)] with b hb using by grind
     · filter_upwards [self_mem_nhdsWithin] with b hb using by grind
 
-theorem continuousOn_primitive_Iio [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (Iio a) μ) :
+theorem continuousOn_Iic_primitive_Iio [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (Iio a) μ) :
     ContinuousOn (fun b ↦ ∫ x in Iio b, f x ∂μ) (Iic a) := by
   intro b₀ hb₀
   rw [mem_Iic] at hb₀
   rw [continuousWithinAt_iff_continuous_left_right]
   constructor
-  · simpa [hb₀] using hf.continuousWithinAt_primitive_Iio hb₀
+  · simpa [hb₀] using hf.continuousWithinAt_Iic_primitive_Iio hb₀
   · rw [Iic_inter_Ici]
     have h_int : IntervalIntegrable f μ b₀ a := by
       rw [intervalIntegrable_iff_integrableOn_Ico_of_le hb₀]
@@ -719,15 +719,15 @@ theorem continuousOn_primitive_Iio [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (
       exact continuousWithinAt_primitive (measure_singleton b₀) (by simpa [hb₀])
     apply (continuousWithinAt_const.add h_cwa).congr h_split (h_split b₀ (left_mem_Icc.2 hb₀))
 
-theorem continuousOn_primitive_Ici [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (Ici a) μ) :
+theorem continuousOn_Ici_primitive_Ici [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (Ici a) μ) :
     ContinuousOn (fun b ↦ ∫ x in Ici b, f x ∂μ) (Ici a) := by
   simp_rw [integral_Ici_eq_integral_Ioi]
-  exact (hf.mono_set Ioi_subset_Ici_self).continuousOn_primitive_Ioi
+  exact (hf.mono_set Ioi_subset_Ici_self).continuousOn_Ici_primitive_Ioi
 
-theorem continuousOn_primitive_Iic [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (Iic a) μ) :
+theorem continuousOn_Iic_primitive_Iic [NoAtoms μ] {a : ℝ} (hf : IntegrableOn f (Iic a) μ) :
     ContinuousOn (fun b ↦ ∫ x in Iic b, f x ∂μ) (Iic a) := by
   simp_rw [integral_Iic_eq_integral_Iio]
-  exact (hf.mono_set Iio_subset_Iic_self).continuousOn_primitive_Iio
+  exact (hf.mono_set Iio_subset_Iic_self).continuousOn_Iic_primitive_Iio
 
 end IntegrableOn
 
